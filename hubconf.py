@@ -23,7 +23,9 @@ def load_data():
         download=True,
         transform=ToTensor(),
     )
-    
+
+training_data, test_data = load_data()
+
     
 def create_dataloaders(training_data, test_data, batch_size=64):
 
@@ -37,6 +39,8 @@ def create_dataloaders(training_data, test_data, batch_size=64):
         break
         
     return train_dataloader, test_dataloader
+
+train_dataloader, test_dataloader = create_dataloaders(training_data, test_data)
 
 
 
