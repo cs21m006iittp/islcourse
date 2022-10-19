@@ -4,6 +4,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets
 from torchvision.transforms import ToTensor, ToPILImage
 from PIL import Image
+import torch.nn.functional as F
 
 def load_data():
 
@@ -36,3 +37,5 @@ def create_dataloaders(training_data, test_data, batch_size=64):
         break
         
     return train_dataloader, test_dataloader
+
+
