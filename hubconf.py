@@ -12,7 +12,7 @@ def load_data():
     training_data = datasets.FashionMNIST(
         root="data",
         train=True,
-        download=False,
+        download=True,
         transform=ToTensor(),
     )
 
@@ -20,7 +20,7 @@ def load_data():
     test_data = datasets.FashionMNIST(
         root="data",
         train=False,
-        download=False,
+        download=True,
         transform=ToTensor(),
     )
     
@@ -37,5 +37,6 @@ def create_dataloaders(training_data, test_data, batch_size=64):
         break
         
     return train_dataloader, test_dataloader
+
 
 
