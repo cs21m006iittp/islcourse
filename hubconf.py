@@ -79,3 +79,13 @@ optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 training_data, test_data = load_data()
 
 train_dataloader, test_dataloader = create_dataloaders(training_data, test_data)
+
+
+epochs = 10 
+for t in range(epochs):
+    print(f"Epoch {t+1}\n-------------------------------")
+    train(train_dataloader, net, loss_fn, optimizer)
+    test(test_dataloader, net, loss_fn)
+print("Done!")
+
+
