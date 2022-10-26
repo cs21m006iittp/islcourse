@@ -6,8 +6,12 @@ from torchvision.transforms import ToTensor, ToPILImage
 from PIL import Image
 import torch.nn.functional as F
 import torch.optim as optim
+import numpy as np
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+
+transform_tensor_to_pil = ToPILImage()
+transform_pil_to_tensor = ToTensor()
+
 
 def load_data():
 
@@ -26,10 +30,14 @@ def load_data():
         download=True,
         transform=ToTensor(),
     )
+    return training_data, test_data
+
+training_data, test_data = load_data()
+
+print (training_data[0][0].shape)
 
 
 
-    
 def create_dataloaders(training_data, test_data, batch_size=64):
 
     # Create data loaders.
@@ -43,121 +51,97 @@ def create_dataloaders(training_data, test_data, batch_size=64):
         
     return train_dataloader, test_dataloader
 
-class ModifiedDataset(Dataset):
-  def __init__(self,given_dataset,shrink_percent=10):
-    self.given_dataset = given_dataset
-    self.shrink_percent = shrink_percent
-    
-  def __len__(self):
-    return len(self.given_dataset)
-
-  def __getitem__(self,idx):
-    img, lab = self.given_dataset[idx]
-
-    # print (type(img))
-    # print (img.shape)
-
-    img2 = transform_tensor_to_pil(img.squeeze())
-
-    # print (img2.size)
-    
-    new_w = int(img2.size[0]*(1-self.shrink_percent/100.0))
-    new_h = int(img2.size[1]*(1-self.shrink_percent/100.0))
-
-    # print (new_w, new_h)
-
-    img3 = img2.resize((new_w,new_h))
-
-    # print (img3.size)
-
-    x = transform_pil_to_tensor(img3)
-
-    # print (x.shape)
-
-    return x,lab
+train_loader, test_loader = create_dataloaders(training_data, test_data, batch_size = 32)
 
 
-
-
-
-class Net(nn.Module):
+class SimpleNN(nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+        self.m = nn.Softmax(dim =1)
+        self.fc1 = nn.Linear(28*28*1, 120)
+        self.fc2 = nn.Linear(120, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
         x = torch.flatten(x, 1) # flatten all dimensions except batch
         x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = self.fc2(x)
+        x = self.m(x)
         return x
+    
+    
+y = (len(set([y for x,y in training_data])))
+model = SimpleNN()
 
 
-net = Net()
+def train_network(train_loader, optimizer,criteria, e):
+  for epoch in range(e):  # loop over the dataset multiple times
 
-print(net)
+    running_loss = 0.0
+    for i, data in enumerate(train_loader, 0):
+        # get the inputs; data is a list of [inputs, labels]
+        inputs, labels = data
+
+        # zero the parameter gradients
+        optimizer.zero_grad()
+
+        # forward + backward + optimize
+        outputs = model(inputs)
+        #print(outputs.shape, labels.shape)
+        tmp = torch.nn.functional.one_hot(labels, num_classes= 10)
+        loss = criteria(outputs, tmp)
+        loss.backward()
+        optimizer.step()
+
+        # print statistics
+        running_loss += loss.item()
+        if i % 2000 == 1999:    # print every 2000 mini-batches
+            print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 2000:.3f}')
+            running_loss = 0.0
+
+  print('Finished Training')
+
+
+def loss_fun(y_pred, y_ground):
+  v = -(y_ground * torch.log(y_pred + 0.0001))
+  v = torch.sum(v)
+  return v
+
+
+x,y = training_data[0]
+model = SimpleNN()
+y_pred = model(x)
+print(y_pred.shape)
+print(y_pred)
+print(torch.sum(y_pred))
+
+y_ground = y
+loss_val = loss_fun(y_pred, y_ground)
+print(loss_val)
+
+optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"Using {device} device")
 
 
 
-loss_fn = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-
-
-training_data, test_data = load_data()
-
-train_dataloader, test_dataloader = create_dataloaders(training_data, test_data)
-input, label = trainingdata
-
-def test_model(dataloader, net, loss_fn):
+def test(dataloader, model, loss_fn):
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
-    net.eval()
+    model.eval()
     test_loss, correct = 0, 0
     with torch.no_grad():
         for X, y in dataloader:
-            X, y = X.to(device), y.to(device)
-            pred = net(X)
-            test_loss += loss_fn(pred, y).item()
+            #X, y = X.to(device), y.to(device)
+            tmp = torch.nn.functional.one_hot(y, num_classes= 10)
+            pred = model(X)
+            test_loss += loss_fn(pred, tmp).item()
             correct += (pred.argmax(1) == y).type(torch.float).sum().item()
     test_loss /= num_batches
     correct /= size
     print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
-    
- def train_model(dataloader, net, loss_fn, optimizer):
-    size = len(dataloader.dataset)
-    net.train()
-    for batch, (X, y) in enumerate(dataloader):
-        X, y = X.to(device), y.to(device)
-
-        # Compute prediction error
-        pred = net(X)
-        loss = loss_fn(pred, y)
-
-        # Backpropagation
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        if batch % 100 == 0:
-            loss, current = loss.item(), batch * len(X)
-            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
-            
-            
-            
 
 
-epochs = 10 
-for t in range(epochs):
-    print(f"Epoch {t+1}\n-------------------------------")
-    train_model(train_dataloader, net, loss_fn, optimizer)
-    test_model(test_dataloader, net, loss_fn)
-print("Done!")
+test(test_loader, model, loss_fun)
 
 
