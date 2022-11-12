@@ -1,3 +1,4 @@
+!pip install torchmetrics
 import torchmetrics
 import torch
 import numpy as np
