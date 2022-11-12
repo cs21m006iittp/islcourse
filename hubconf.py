@@ -101,7 +101,7 @@ class CS21M006(nn.Module):
     return x
 
 # function for getting loss function ====================================================
-def get_lossfn_and_optimizer():
+def get_loss_fn():
     lossfn = loss_fn
     
     return lossfn     
