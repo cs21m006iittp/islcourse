@@ -1,163 +1,197 @@
+import torchmetrics
 import torch
+import numpy as np
+import matplotlib.pyplot as plt
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
-from torchvision import datasets
-from torchvision.transforms import ToTensor, ToPILImage
-from PIL import Image
+from torchvision import datasets 
+from torchvision.transforms import ToTensor
 import torch.nn.functional as F
-import torch.optim as optim
+from torchmetrics import Precision, Recall, Accuracy, F1Score
+from torchmetrics.classification import accuracy
 
+
+#Selecting the Divice----------------------------------------------
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
+#Function for Loading the data-------------------------------------
 def load_data():
+  training_data = datasets.FashionMNIST( 
+      root = "data",
+      train=True,
+      download=True,
+      transform=ToTensor(),
+  ) 
 
-    # Download training data from open datasets.
-    training_data = datasets.FashionMNIST(
-        root="data",
-        train=True,
-        download=True,
-        transform=ToTensor(),
-    )
-
-    # Download test data from open datasets.
-    test_data = datasets.FashionMNIST(
-        root="data",
-        train=False,
-        download=True,
-        transform=ToTensor(),
-    )
+  test_data = datasets.FashionMNIST(
+      root= "data",
+      train = False,
+      download=True,
+      transform = ToTensor(),
+  )
+  return training_data, test_data
 
 
 
+
+#creating Data Loader==========================================================
+def Create_loader(training_data, test_data, batch_size):
+  train_loader = DataLoader(training_data,batch_size,shuffle=True)
+  test_loader = DataLoader(test_data,batch_size,shuffle=True)
+
+  for X, Y in train_loader:
+    print(f"Shape of the input data X is : {X.shape}")
+    print(f"Shape of the output data Y is : {Y.shape}")
+    break
+  
+  return train_loader, test_loader
+
+
+
+#defining loss function=========================================================
+def loss_fn(Y_pred, Y_ground):
+  e = 0.001
+  v = -torch.sum(Y_ground*torch.log(Y_pred+e))
+  return v
+
+
+# Creating NN ====================================================================
+
+class CS21M006(nn.Module):
+  def __init__(self, channels, classess, hight, width, config):
+    super(CS21M006, self).__init__()
+
+    self.seq_op = nn.Sequential()
+    self.param = 0
+
+    for i in range(len(config)):
+      layer = config[i]
+
+      in_channel = layer[0]
+      out_channel = layer[1]
+      kernel = layer[2]
+      padding = layer[4]
+
+      if isinstance(layer[3], int):
+        stride = [layer[3], layer[3]]
+      else:
+        stride = layer[3]
+
+
+      self.seq_op.append(nn.Conv2d(in_channels= in_channel, out_channels = out_channel, kernel_size = kernel, stride = stride, padding = padding ).to(device))
+
+      self.seq_op.append(nn.ReLU())
+
+      if padding != "same":
+        if isinstance(padding, int ):
+          padding = [padding, padding]
+        hight = (int)((hight-kernel[0])/stride[0])+1
+        width = (int)((width- kernel[1])/stride[1])+1
+
+      if i == len(config)-1:
+        self.param = out_channel
+    self.seq_op.append(nn.Flatten())
+    self.seq_op.append(nn.Linear(self.param*hight*width,classess).to(device))
+    self.seq_op.append(nn.Softmax(1))
+
+
+  def forward(self, x):
+    x= self.seq_op(x)
+    return x
+
+# function for getting loss function ====================================================
+def get_lossfn_and_optimizer():
+    lossfn = loss_fn
     
-def create_dataloaders(training_data, test_data, batch_size=64):
+    return lossfn     
 
-    # Create data loaders.
-    train_dataloader = DataLoader(training_data, batch_size=batch_size)
-    test_dataloader = DataLoader(test_data, batch_size=batch_size)
+#function for training the model for each epoch======================================================    
+def train_model(train_loader,model,loss_fn,optimizer):
+  size = len(train_loader.dataset)
+  batches = len(train_loader)
+  classes = len(train_loader.dataset.classes)
+  model.train()
+  t_loss = 0
+  for batch, (X, Y) in enumerate(train_loader):
+    X, Y = X.to(device), Y.to(device)
+    #predictating the value
+    pred = model(X.to(device))
+    Y= F.one_hot(Y.to(device),10)
+    #computing the error
+    loss = loss_fn(pred, Y)
+    t_loss += loss.item()
+    #optimizing the parameters
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
 
-    for X, y in test_dataloader:
-        print(f"Shape of X [N, C, H, W]: {X.shape}")
-        print(f"Shape of y: {y.shape} {y.dtype}")
-        break
-        
-    return train_dataloader, test_dataloader
+  print(f" Avg Loss : {loss/batches:>7f} \n")
 
-class ModifiedDataset(Dataset):
-  def __init__(self,given_dataset,shrink_percent=10):
-    self.given_dataset = given_dataset
-    self.shrink_percent = shrink_percent
+
+
+#train function for calling the train_model function for each epocch
+def train(train_loader, model, epochs ,learning_rate=1e-3):
+  loss_f = loss_fn
+  optimizer = torch.optim.SGD(model.parameters(),lr=learning_rate, momentum =0.9)
+  for i in range(epochs):
+        print("running epoch ",i)
+        train_model(train_loader,model,loss_f,optimizer)
+  print("FINISHED TRAINING:")
+
+
+#Test function for testting the model
+def test(test_loader,model, loss_fn):
+  size = len(test_loader.dataset)
+  batches = len(test_loader)
+  classes = len(test_loader.dataset.classes)
+
+  model.eval()
+  Y_pred = []
+  Y_true = []
+  loss , correct = 0 ,0
+  with torch.no_grad():
+    for X ,Y in test_loader:
+      pred = model(X.to(device))
+
+      t = F.one_hot(Y.to(device), 10).to(device)
+      Y_pred.append(pred.argmax(1))
+      Y_true.append(Y)
+      loss += loss_fn(pred, t).item()
+      correct += (pred.argmax(1) == Y).type(torch.float).sum().item()
+  
+  loss /= batches
+  correct /= size
+  Y_pred = torch.cat(Y_pred)
+  Y_true = torch.cat(Y_true)
+  print(f"\nAvg loss: {loss:>8f} \n")
+  
+
+  accuracy = Accuracy().to(device)
+  print(f'Accuracy : {accuracy(Y_pred, Y_true).item()*100:.3f}% ')
+
+  precision = Precision(average = 'macro', num_classes = classes).to(device)
+  print(f'precision :{ precision(Y_pred,Y_true).item():.4f}')
+
+  recall = Recall(average = 'macro', num_classes = classes).to(device)
+  print(f'recall : { recall(Y_pred,Y_true).item():.4f}')
+  f1_score = F1Score(average = 'macro', num_classes = classes).to(device)
+  print(f'f1_score :  {f1_score(Y_pred,Y_true).item():.4f}')
+  return accuracy,precision, recall, f1_score
+
+
+
+
+
+#Get_model function for gettting and trained on the given configuration
+
+def get_model(trainloader,config,epochs,learning_rate):
     
-  def __len__(self):
-    return len(self.given_dataset)
-
-  def __getitem__(self,idx):
-    img, lab = self.given_dataset[idx]
-
-    # print (type(img))
-    # print (img.shape)
-
-    img2 = transform_tensor_to_pil(img.squeeze())
-
-    # print (img2.size)
+    N , num_channels , height , width = next(iter(trainloader))[0].shape
+    num_classes = len(trainloader.dataset.classes)
     
-    new_w = int(img2.size[0]*(1-self.shrink_percent/100.0))
-    new_h = int(img2.size[1]*(1-self.shrink_percent/100.0))
-
-    # print (new_w, new_h)
-
-    img3 = img2.resize((new_w,new_h))
-
-    # print (img3.size)
-
-    x = transform_pil_to_tensor(img3)
-
-    # print (x.shape)
-
-    return x,lab
-
-
-
-
-
-class Net(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
-
-    def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = torch.flatten(x, 1) # flatten all dimensions except batch
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
-
-
-net = Net()
-
-print(net)
-
-
-
-loss_fn = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-
-
-training_data, test_data = load_data()
-
-train_dataloader, test_dataloader = create_dataloaders(training_data, test_data)
-input, label = trainingdata
-
-def test_model(dataloader, net, loss_fn):
-    size = len(dataloader.dataset)
-    num_batches = len(dataloader)
-    net.eval()
-    test_loss, correct = 0, 0
-    with torch.no_grad():
-        for X, y in dataloader:
-            X, y = X.to(device), y.to(device)
-            pred = net(X)
-            test_loss += loss_fn(pred, y).item()
-            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
-    test_loss /= num_batches
-    correct /= size
-    print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+    my_model = CS21M006(num_channels,num_classes,height,width,config).to(device)
     
- def train_model(dataloader, net, loss_fn, optimizer):
-    size = len(dataloader.dataset)
-    net.train()
-    for batch, (X, y) in enumerate(dataloader):
-        X, y = X.to(device), y.to(device)
-
-        # Compute prediction error
-        pred = net(X)
-        loss = loss_fn(pred, y)
-
-        # Backpropagation
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        if batch % 100 == 0:
-            loss, current = loss.item(), batch * len(X)
-            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
-            
-            
-            
-
-
-epochs = 10 
-for t in range(epochs):
-    print(f"Epoch {t+1}\n-------------------------------")
-    train_model(train_dataloader, net, loss_fn, optimizer)
-    test_model(test_dataloader, net, loss_fn)
-print("Done!")
-
+    train(trainloader,my_model,epochs,learning_rate)
+    
+    return my_model
 
