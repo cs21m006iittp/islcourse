@@ -1,5 +1,4 @@
-!pip install torchmetrics
-import torchmetrics
+
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,6 +9,7 @@ from torchvision.transforms import ToTensor
 import torch.nn.functional as F
 from torchmetrics import Precision, Recall, Accuracy, F1Score
 from torchmetrics.classification import accuracy
+
 
 
 #Selecting the Divice----------------------------------------------
