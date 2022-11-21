@@ -24,8 +24,7 @@ from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSe
 #import the classifier and performance matrix
 
 from sklearn import svm, metrics
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, recall_score, precision_score, f1_score
 # You can import whatever standard packages are required
 
 # full sklearn, full pytorch, pandas, matplotlib, numpy are all available
@@ -107,17 +106,37 @@ def build_rf_model(X=None, y=None):
 
 def get_metrics(model=None,X=None,y=None):
   pass
-  ypred = model.pred
+  ypred = model.predict(X)
+  print("Classification Report is : ")
+  print(classification_report(y,ypred))
+  print("Confusion Matrix is : ")
+  print(confusion_matrix(y, ypred))
   # Obtain accuracy, precision, recall, f1score, auc score - refer to sklearn metrics
-  acc, prec, rec, f1, auc = 0,0,0,0,0
-  acc = accuracy
+  acc, prec, rec, f1 = 0,0,0,0
+  print("f1 score is : ",f1_score(y, ypred, average=None))
+  print("Precision score is :",precision_score(y, ypred, average=None))
+  print("recall score is : ",recall_score(y, ypred, average=None))
+  print("accuracy score is : ", accuracy_score(y, ypred))
+  acc = accuracy_score(y, y_pred)
+  
+  prec = precision_score(y, ypred, average=None)
+  rec = recall_score(y, ypred, average=None)
+  f1 = f1_score(y, ypred, average=None)
+  
   # write your code here...
-  return acc, prec, rec, f1, auc
+  return acc, prec, rec, f1
+  # write your code here...
+  return acc, prec, rec, f1
 
 def get_paramgrid_lr():
   # you need to return parameter grid dictionary for use in grid search cv
   # penalty: l1 or l2
-  lr_param_grid = None
+  lr_param_grid = {
+    'n_estimators' : [50, 100],
+    'max_features' : ['auto', 'sqrt','log2'],
+    'max_depth' : [0, 1, 10],
+    'criterion' : ['gini', 'entropy']
+}
   # refer to sklearn documentation on grid search and logistic regression
   # write your code here...
   return lr_param_grid
