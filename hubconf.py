@@ -8,6 +8,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 %matplotlib inline
 from sklearn.datasets import make_blobs, make_circles
+from sklearn.metrics.cluster import v_measure_score
+from sklearn.metrics.cluster import homogeneity_score
+from sklearn.metrics import completeness_score
 
 # You can import whatever standard packages are required
 
@@ -52,18 +55,21 @@ def build_kmeans(X,y,k=10):
   # write your code ...
   return km
 
-def assign_kmeans(km=None,X=None):
+def assign_kmeans(km,X):
   pass
   # For each of the points in X, assign one of the means
   # refer to predict() function of the KMeans in sklearn
   # write your code ...
-  ypred = None
+  ypred = km.predict(X)
   return ypred
 
 def compare_clusterings(ypred_1=None,ypred_2=None):
   pass
   # refer to sklearn documentation for homogeneity, completeness and vscore
   h,c,v = 0,0,0 # you need to write your code to find proper values
+  v = v_measure_score(ypred_1,ypred_2)
+  h = homogeneity_score(ypred_1,ypred_2)
+  c = completeness_score(ypred_1,ypred_2)
   return h,c,v
 
 ###### PART 2 ######
