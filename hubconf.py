@@ -238,7 +238,6 @@ def get_mnist_tensor():
   print(X.shape, y.shape)
   # write your code ...
   # convert to tensor
-  X, y = 
   # write your code
   return X,y
 
