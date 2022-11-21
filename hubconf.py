@@ -131,12 +131,8 @@ def get_metrics(model=None,X=None,y=None):
 def get_paramgrid_lr():
   # you need to return parameter grid dictionary for use in grid search cv
   # penalty: l1 or l2
-  lr_param_grid = {
-    'n_estimators' : [50, 100],
-    'max_features' : ['auto', 'sqrt','log2'],
-    'max_depth' : [0, 1, 10],
-    'criterion' : ['gini', 'entropy']
-}
+  lr_param_grid = {"C":np.logspace(-3,3,7), "penalty":["l1","l2"]}
+
   # refer to sklearn documentation on grid search and logistic regression
   # write your code here...
   return lr_param_grid
@@ -146,7 +142,13 @@ def get_paramgrid_rf():
   # n_estimators: 1, 10, 100
   # criterion: gini, entropy
   # maximum depth: 1, 10, None  
-  rf_param_grid = None
+  rf_param_grid =  {
+    'n_estimators' : [50, 100],
+    'max_features' : ['auto', 'sqrt','log2'],
+    'max_depth' : [0, 1, 10],
+    'criterion' : ['gini', 'entropy']
+}
+
   # refer to sklearn documentation on grid search and random forest classifier
   # write your code here...
   return rf_param_grid
@@ -159,9 +161,10 @@ def perform_gridsearch_cv_multimetric(model=None, param_grid=None, cv=5, X=None,
   
   # metrics = [] the evaluation program can change what metrics to choose
   
-  grid_search_cv = None
+  grid_search_cv = GridSearchCV(estimator = model, param_grid = param_grid, cv = cv)
   # create a grid search cv object
   # fit the object on X and y input above
+  new_model = grid_search_cv.fit(X,y)
   # write your code here...
   
   # metric of choice will be asked here, refer to the-scoring-parameter-defining-model-evaluation-rules of sklearn documentation
