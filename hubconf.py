@@ -18,6 +18,7 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV, cross_val_score
+from sklearn.metrics import roc_auc_score
 
 # imporitn the data set from the sklearn
 
@@ -168,10 +169,18 @@ def perform_gridsearch_cv_multimetric(model=None, param_grid=None, cv=5, X=None,
   # write your code here...
   
   # metric of choice will be asked here, refer to the-scoring-parameter-defining-model-evaluation-rules of sklearn documentation
+  acc = accuracy_score(y, y_pred)
+  
+  prec = precision_score(y, ypred, average=None)
+  rec = recall_score(y, ypred, average=None)
+  f1 = f1_score(y, ypred, average=None)
+  roc = roc_auc_score(y, clf.predict_proba(X), multi_class='ovr')
   
   # refer to cv_results_ dictonary
   # return top 1 score for each of the metrics given, in the order given in metrics=... list
-  
+  a = acc.max()
+  b = prec.max()
+  c = 
   top1_scores = []
   
   return top1_scores
