@@ -19,6 +19,14 @@ from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV, cross_val_score
 from sklearn.metrics import roc_auc_score
+import torch
+
+
+from torch import nn
+from torch.utils.data import Dataset, DataLoader
+from torchvision import datasets 
+from torchvision.transforms import ToTensor
+import torch.nn.functional as F
 
 # imporitn the data set from the sklearn
 
