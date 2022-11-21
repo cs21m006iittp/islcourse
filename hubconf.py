@@ -113,7 +113,7 @@ def get_metrics(model=None,X=None,y=None):
   print("Confusion Matrix is : ")
   print(confusion_matrix(y, ypred))
   # Obtain accuracy, precision, recall, f1score, auc score - refer to sklearn metrics
-  acc, prec, rec, f1 = 0,0,0,0
+  acc, prec, rec, f1, auc = 0,0,0,0,0
   print("f1 score is : ",f1_score(y, ypred, average=None))
   print("Precision score is :",precision_score(y, ypred, average=None))
   print("recall score is : ",recall_score(y, ypred, average=None))
@@ -123,9 +123,10 @@ def get_metrics(model=None,X=None,y=None):
   prec = precision_score(y, ypred, average=None)
   rec = recall_score(y, ypred, average=None)
   f1 = f1_score(y, ypred, average=None)
+  auc = roc = roc_auc_score(y, model.predict_proba(X), multi_class='ovr')
   
   # write your code here...
-  return acc, prec, rec, f1
+  return acc, prec, rec, f1, auc
 
 
 def get_paramgrid_lr():
@@ -192,15 +193,15 @@ class MyNN(nn.Module):
   def __init__(self,inp_dim=64,hid_dim=13,num_classes=10):
     super(MyNN,self)
     
-    self.fc_encoder = None # write your code inp_dim to hid_dim mapper
-    self.fc_decoder = None # write your code hid_dim to inp_dim mapper
-    self.fc_classifier = None # write your code to map hid_dim to num_classes
+    self.fc_encoder = nn.Linear(in_features = inp_dim,out_features = hid_dim)# write your code inp_dim to hid_dim mapper
+    self.fc_decoder = nn.Linear(in_features =hid_dim,out_features =inp_dim) # write your code hid_dim to inp_dim mapper
+    self.fc_classifier = nn.Linear((in_features =hid_dim,out_features =num_classes)) # write your code to map hid_dim to num_classes
     
-    self.relu = None #write your code - relu object
-    self.softmax = None #write your code - softmax object
+    self.relu = nn.ReLu()#write your code - relu object
+    self.softmax = nn.Softmax() #write your code - softmax object
     
   def forward(self,x):
-    x = None # write your code - flatten x
+    x = nn.Flatten(x) # write your code - flatten x
     x_enc = self.fc_encoder(x)
     x_enc = self.relu(x_enc)
     
@@ -213,10 +214,10 @@ class MyNN(nn.Module):
   
   # This a multi component loss function - lc1 for class prediction loss and lc2 for auto-encoding loss
   def loss_fn(self,x,yground,y_pred,xencdec):
-    
+    e = 0.001
     # class prediction loss
     # yground needs to be one hot encoded - write your code
-    lc1 = None # write your code for cross entropy between yground and y_pred, advised to use torch.mean()
+    lc1 = -torch.sum(yground*torch.log(y_pred+e))# write your code for cross entropy between yground and y_pred, advised to use torch.mean()
     
     # auto encoding loss
     lc2 = torch.mean((x - xencdec)**2)
@@ -232,8 +233,12 @@ def get_mynn(inp_dim=64,hid_dim=13,num_classes=10):
 
 def get_mnist_tensor():
   # download sklearn mnist
+  digits = load_digits()
+  X , y =  tf.convert_to_tensor(digits.data) , tf.convert_to_tensor(digits.target)
+  print(X.shape, y.shape)
+  # write your code ...
   # convert to tensor
-  X, y = None, None
+  X, y = 
   # write your code
   return X,y
 
