@@ -25,7 +25,7 @@ def get_data_circles(n_points=100):
   pass
   # write your code here
   # Refer to sklearn data sets
-  X, y = None
+  X, y = make_circles(n_samples=n_points, noise=0.05)
   # write your code ...
   return X,y
 
