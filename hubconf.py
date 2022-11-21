@@ -126,8 +126,7 @@ def get_metrics(model=None,X=None,y=None):
   
   # write your code here...
   return acc, prec, rec, f1
-  # write your code here...
-  return acc, prec, rec, f1
+
 
 def get_paramgrid_lr():
   # you need to return parameter grid dictionary for use in grid search cv
@@ -167,21 +166,23 @@ def perform_gridsearch_cv_multimetric(model=None, param_grid=None, cv=5, X=None,
   # fit the object on X and y input above
   new_model = grid_search_cv.fit(X,y)
   # write your code here...
-  
+  ypred =new_model.predict(X)
   # metric of choice will be asked here, refer to the-scoring-parameter-defining-model-evaluation-rules of sklearn documentation
-  acc = accuracy_score(y, y_pred)
+  acc = accuracy_score(y, ypred)
   
   prec = precision_score(y, ypred, average=None)
   rec = recall_score(y, ypred, average=None)
   f1 = f1_score(y, ypred, average=None)
-  roc = roc_auc_score(y, clf.predict_proba(X), multi_class='ovr')
+  roc = roc_auc_score(y, new_model.predict_proba(X), multi_class='ovr')
   
   # refer to cv_results_ dictonary
   # return top 1 score for each of the metrics given, in the order given in metrics=... list
   a = acc.max()
-  b = prec.max()
-  c = 
-  top1_scores = []
+  b = prec.max() 
+  c =  f1.max()
+  d =rec.max()
+  e = roc.max()
+  top1_scores = [a,b,c,d,e]
   
   return top1_scores
 
