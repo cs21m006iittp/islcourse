@@ -11,6 +11,7 @@ from sklearn.datasets import make_blobs, make_circles
 from sklearn.metrics.cluster import v_measure_score
 from sklearn.metrics.cluster import homogeneity_score
 from sklearn.metrics import completeness_score
+from sklearn.datasets import load_digits 
 
 # You can import whatever standard packages are required
 
@@ -41,7 +42,9 @@ def get_data_mnist():
   pass
   # write your code here
   # Refer to sklearn data sets
-  X,y = None
+  digits = load_digits()
+  X , y = digits.data, digits.target
+  print(X.shape, y.shape)
   # write your code ...
   return X,y
 
