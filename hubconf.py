@@ -12,6 +12,19 @@ from sklearn.metrics.cluster import v_measure_score
 from sklearn.metrics.cluster import homogeneity_score
 from sklearn.metrics import completeness_score
 from sklearn.datasets import load_digits 
+from sklearn.ensemble import RandomForestClassifier
+import seaborn as sns
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV, cross_val_score
+
+# imporitn the data set from the sklearn
+
+#import the classifier and performance matrix
+
+from sklearn import svm, metrics
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 # You can import whatever standard packages are required
 
@@ -79,22 +92,25 @@ def compare_clusterings(ypred_1=None,ypred_2=None):
 
 def build_lr_model(X=None, y=None):
   pass
-  lr_model = None
+  lr_model = LogisticRegression(random_state=0).fit(X, y)
   # write your code...
   # Build logistic regression, refer to sklearn
   return lr_model
 
 def build_rf_model(X=None, y=None):
   pass
-  rf_model = None
+  rf_model = RandomForestClassifier(n_estimators=100)
   # write your code...
   # Build Random Forest classifier, refer to sklearn
+  rf_model.fit(X,y)
   return rf_model
 
 def get_metrics(model=None,X=None,y=None):
   pass
+  ypred = model.pred
   # Obtain accuracy, precision, recall, f1score, auc score - refer to sklearn metrics
   acc, prec, rec, f1, auc = 0,0,0,0,0
+  acc = accuracy
   # write your code here...
   return acc, prec, rec, f1, auc
 
