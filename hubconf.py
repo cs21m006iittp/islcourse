@@ -69,7 +69,7 @@ def get_data_mnist():
   # write your code ...
   return X,y
 
-def build_kmeans(X,y,k=10):
+def build_kmeans(X,k=10):
   pass
   # k is a variable, calling function can give a different number
   # Refer to sklearn KMeans method
