@@ -75,7 +75,7 @@ def build_kmeans(X,k=10):
   # Refer to sklearn KMeans method
   
   km = KMeans(n_clusters=k)
-  km.fit(X,y)
+  km.fit(X,k)
   # write your code ...
   return km
 
